@@ -1,111 +1,102 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 
-const OtpVerification = () => {
-  const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
-  const [timer, setTimer] = useState(60);
-  const [isResendDisabled, setIsResendDisabled] = useState(true);
+export default function OtpVerification() {
+  const location = useLocation();
   const navigate = useNavigate();
+  const email = location.state?.email;
 
-  // Timer for resend button
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [disabled, setDisabled] = useState(false);
+  const [timer, setTimer] = useState(0);
+  const [message, setMessage] = useState("");
+
   useEffect(() => {
-    if (timer > 0) {
-      const countdown = setInterval(() => {
-        setTimer((prev) => prev - 1);
-      }, 1000);
-      return () => clearInterval(countdown);
-    } else {
-      setIsResendDisabled(false);
-    }
+    if (timer <= 0) return;
+    const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+    return () => clearInterval(interval);
   }, [timer]);
 
-  const handleVerify = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otp === "123456") {
-      navigate("/otp-success");
-    } else {
-      setError("Invalid OTP. Please try again.");
-    }
-  };
+  useEffect(() => {
+    if (timer === 0) setDisabled(false);
+  }, [timer]);
 
-  const handleResend = () => {
-    setOtp("");
-    setTimer(60);
-    setIsResendDisabled(true);
-    setError("");
-    alert("OTP resent successfully! (Use 123456)");
+  if (!email) {
+    alert("Email not found. Please go back and enter your email.");
+    navigate("/forgot-password");
+    return null;
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp || !newPassword) return alert("Please enter OTP and new password");
+
+    setDisabled(true);
+    setTimer(30);
+
+    try {
+      const res = await axios.post("http://localhost:3000/auth/reset-password-otp", {
+        email,
+        otp,
+        newPassword,
+      });
+
+      alert(res.data.message || "Password reset successful!");
+      navigate("/login");
+    } catch (err: any) {
+      setDisabled(false);
+      setMessage(err.response?.data?.message || "Failed to reset password");
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center 
-    bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 
-    px-4">
-      <div className="w-full max-w-md">
-        <Card className="shadow-lg border border-white/20 backdrop-blur-md bg-white/10 rounded-xl p-6">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">OTP Verification</CardTitle>
-            <CardDescription className="text-center text-white">
-              Enter the 6-digit OTP sent to your email
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleVerify} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+    <div className="flex items-center justify-center min-h-screen bg-[#f3f7fb] px-4">
+      <form
+        onSubmit={handleResetPassword}
+        className="bg-white w-full max-w-md p-8 rounded-2xl shadow-md text-center"
+      >
+        <h2 className="text-3xl font-bold text-[#0a2b5c] mb-4">Verify OTP & Reset Password</h2>
+        <p className="text-gray-600 text-sm mb-6">
+          Enter the OTP sent to <span className="font-semibold">{email}</span> and set your new password.
+        </p>
 
-              <Input
-                type="text"
-                placeholder="Enter OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                maxLength={6}
-                required
-              />
+        {/* OTP Input */}
+        <input
+          type="text"
+          placeholder="Enter OTP"
+          value={otp}
+          onChange={(e) => setOtp(e.target.value)}
+          className="w-full px-4 py-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a2b5c]"
+          required
+        />
 
-              <div className="flex justify-between items-center">
-                {timer > 0 ? (
-                  <p className="text-sm text-white">
-                    Resend OTP in <span className="font-bold">{timer}s</span>
-                  </p>
-                ) : (
-                  <p className="text-sm text-white">Didn't receive OTP?</p>
-                )}
-                <Button
-                  type="button"
-                  variant="link"
-                  className="text-blue-200 hover:underline"
-                  disabled={isResendDisabled}
-                  onClick={handleResend}
-                >
-                  Resend OTP
-                </Button>
-              </div>
+        {/* New Password Input */}
+        <input
+          type="password"
+          placeholder="New Password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="w-full px-4 py-2 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a2b5c]"
+          required
+        />
 
-              <Button type="submit" className="w-full">
-                Verify OTP
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={disabled}
+          className={`w-full py-2 rounded-lg font-semibold transition ${
+            disabled
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-[#0a2b5c] hover:bg-[#08397a] text-white"
+          }`}
+        >
+          {disabled ? `Wait ${timer}s` : "Reset Password"}
+        </button>
+
+        {message && <p className="mt-4 text-red-500">{message}</p>}
+      </form>
     </div>
   );
-};
-
-export default OtpVerification;
+}
