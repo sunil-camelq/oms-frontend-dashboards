@@ -1,26 +1,22 @@
 import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const location = useLocation();
   const navigate = useNavigate();
 
-  const email = location.state?.email; // comes from OTP flow
-  const token = new URLSearchParams(window.location.search).get("token"); // comes from email link
+  const token = new URLSearchParams(window.location.search).get("token");
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password !== confirmPassword) {
-      return alert("Passwords do not match");
-    }
+    if (!token) return alert("Invalid or expired token!");
+    if (password !== confirmPassword) return alert("Passwords do not match");
 
     try {
-       await axios.post("http://localhost:3000/auth/reset-password", {
-        email,
+      await axios.post("http://localhost:3000/auth/reset-password", {
         token,
         newPassword: password,
       });

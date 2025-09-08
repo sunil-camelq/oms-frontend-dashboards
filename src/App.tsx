@@ -26,6 +26,7 @@ import Documents from "./pages/Documents";
 import Performance from "./pages/Performance";
 import ResetPassword from "./pages/resetPassword";
 
+import PrivateRoute from "./components/PrivateRoute"; // ✅ Import guard
 
 const queryClient = new QueryClient();
 
@@ -43,13 +44,19 @@ const App = () => (
           <Route path="/otp-verification" element={<OtpVerification />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Dashboard routes with layout */}
-          <Route element={<DashboardLayout />}>
+          {/* Protected Dashboard routes */}
+          <Route
+            element={
+              <PrivateRoute>
+                <DashboardLayout />
+              </PrivateRoute>
+            }
+          >
             <Route path="/emp/dashboard" element={<Dashboard />} />
             <Route path="/emp/payroll" element={<Payroll />} />
             <Route path="/emp/attendance" element={<Attendance />} />
             <Route path="/emp/leave" element={<Leave />} />
-            <Route path="/emp/documents" element={<Documents  />} />
+            <Route path="/emp/documents" element={<Documents />} />
             <Route path="/emp/tasks" element={<Tasks />} />
             <Route path="/emp/performance" element={<Performance />} />
             <Route path="/emp/projects" element={<Projects />} />
@@ -60,8 +67,10 @@ const App = () => (
             <Route path="/emp/reports" element={<Reports />} />
             <Route path="/emp/feedback" element={<Feedback />} />
             <Route path="/emp/settings" element={<Settings />} />
-            <Route path="*" element={<NotFound />} />
           </Route>
+
+          {/* Catch-all */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>

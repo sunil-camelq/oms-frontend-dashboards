@@ -40,7 +40,7 @@ export default function Login() {
       if (role === "Employee") {
         navigate("/emp/dashboard");
       } else if (role === "Director") {
-        ("not found")
+        navigate("/dir/dashboard");
       }  else {
         ("default-dashboard"); // fallback route
       }
